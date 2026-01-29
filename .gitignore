@@ -10,7 +10,7 @@ venv/
 *.log
 
 # Data
-data/raw_data/
+# data/raw_data/ (Included)
 data/processed/
 models/
 outputs/
