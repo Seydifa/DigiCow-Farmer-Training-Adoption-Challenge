@@ -14,9 +14,13 @@ try:
     CATBOOST_AVAILABLE = True
 except ImportError:
     CATBOOST_AVAILABLE = False
-    CatBoostClassifier = object # Dummy for inheritance if not available
+    # Define a proper dummy class for inheritance safety
+    class CatBoostClassifier(BaseEstimator, ClassifierMixin):
+        def fit(self, X, y=None, **kwargs): raise ImportError("CatBoost not installed")
+        def predict(self, X, **kwargs): raise ImportError("CatBoost not installed")
+        def predict_proba(self, X, **kwargs): raise ImportError("CatBoost not installed")
 
-class SklearnCompatibleCatBoostClassifier(CatBoostClassifier, BaseEstimator, ClassifierMixin):
+class SklearnCompatibleCatBoostClassifier(CatBoostClassifier):
     """
     Wrapper for CatBoostClassifier to fix compatibility issues with scikit-learn 1.6+.
     Specifically addresses the missing '__sklearn_tags__' attribute.
