@@ -1,0 +1,5 @@
+# Ignore all submission runs except the .gitkeep file
+run_*/
+
+# Keep this directory in git
+!.gitkeep
