@@ -82,6 +82,9 @@ def main():
     train_df = load_data(TRAIN_FILE)
     logger.info(f"Train shape: {train_df.shape}")
     
+    # Fit feature engineer on training data
+    feature_engineer.fit(train_df)
+    
     # Process training data
     logger.info("\n" + "="*60)
     logger.info("Processing Training Data")

@@ -27,6 +27,26 @@ class FeatureEngineer:
         """
         self.topic_categories = topic_categories or {}
         self.topic_encodings = {}
+        self.frequency_encodings = {}
+        self.cols_to_encode = ['county', 'subcounty', 'ward', 'trainer']
+        
+    def fit(self, df: pd.DataFrame):
+        """
+        Fit feature engineer on training data to learn encodings.
+        
+        Args:
+            df: Training DataFrame
+        """
+        logger.info("Fitting feature engineer to training data...")
+        
+        # 1. Frequency Encoding
+        for col in self.cols_to_encode:
+            if col in df.columns:
+                # Normalize count
+                self.frequency_encodings[col] = df[col].value_counts(normalize=True).to_dict()
+                
+        logger.info(f"Learned encodings for {len(self.frequency_encodings)} columns")
+        return self
         
     def create_temporal_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -279,6 +299,34 @@ class FeatureEngineer:
         logger.info(f"Created {2} ratio features")
         return df
     
+    def create_location_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Create location and entity-based features using learned encodings.
+        
+        Args:
+            df: Input DataFrame
+            
+        Returns:
+            DataFrame with location features
+        """
+        logger.info("Creating location/entity features...")
+        
+        # Apply frequency encoding
+        for col in self.cols_to_encode:
+            if col in df.columns and col in self.frequency_encodings:
+                new_col_name = f'{col}_freq_encoded'
+                # Map using strict dictionary lookups, fill missing with 0
+                df[new_col_name] = df[col].map(self.frequency_encodings[col]).fillna(0).astype('float32')
+                
+        # Location interactions
+        if 'county' in df.columns and 'num_total_trainings' in df.columns:
+            # We can't do group-by here easily without leakage if we don't store the aggregation map.
+            # But the frequency encoding acts as a proxy for "size" of the location.
+            pass
+            
+        logger.info(f"Created {len(self.frequency_encodings)} location features")
+        return df
+
     def create_missing_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Create indicators for missing values.
@@ -313,6 +361,7 @@ class FeatureEngineer:
         df = self.create_engagement_features(df)
         df = self.create_topic_features(df)
         df = self.create_demographic_features(df)
+        df = self.create_location_features(df)
         df = self.create_interaction_features(df)
         df = self.create_ratio_features(df)
         df = self.create_missing_indicators(df)
